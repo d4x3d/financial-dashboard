@@ -13,7 +13,6 @@ export const login = mutation({
       .first();
 
     if (admin) {
-      // @ts-expect-error
       if (admin.password === password && admin.isAdmin) {
         return admin;
       }

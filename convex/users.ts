@@ -13,7 +13,6 @@ export const authenticate = mutation({
       .first();
 
     if (user) {
-      // @ts-ignore
       if (user.password === password) {
         return user;
       }
