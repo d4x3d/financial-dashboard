@@ -14,7 +14,7 @@ const Footer: React.FC = () => {
           <div className="col-span-1">
             <div className="flex items-center mb-4">
               <img
-                src="/images/logo-personal.svg"
+                src="/tdamcb-mobile-logo.png"
                 alt="Trusted"
                 className="h-6 mr-2 invert"
               />

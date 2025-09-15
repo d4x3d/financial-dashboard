@@ -10,7 +10,7 @@ const TransferLayout: React.FC = () => {
         <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <Link to="/" className="flex items-center">
             <img
-              src="/images/logo-personal.svg"
+              src="/tdamcb-mobile-logo.png"
               alt="Trusted"
               className="h-6"
             />

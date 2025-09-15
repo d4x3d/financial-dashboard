@@ -101,7 +101,7 @@ const AdminLayout: React.FC = () => {
             </button>
             <div className="flex items-center">
               <img
-                src="/images/wf_logo_220x23.png"
+                src="/tdamcb-mobile-logo.png"
                 alt="Financial Dashboard"
                 width="220"
                 height="23"
