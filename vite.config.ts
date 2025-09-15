@@ -10,5 +10,13 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: false,
     copyPublicDir: true,
+    rollupOptions: {
+      external: [
+        'convex/values',
+        'convex/server',
+        'convex/_generated/server',
+        'convex/_generated/api'
+      ]
+    }
   }
 })
