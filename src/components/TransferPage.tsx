@@ -7,14 +7,17 @@ import LoadingOverlay from "./ui/loading-overlay";
 import { motion } from "framer-motion";
 import { Building, ArrowRight, AlertCircle, Search, X } from "lucide-react";
 import { Alert, AlertDescription } from "./ui/alert";
-import { db } from "../services/supabaseDb";
+import { useAuth } from "../contexts/AuthContext";
+import { useMutation } from "convex/react";
+import { api } from "../../convex/_generated/api";
 import { searchInstitutions, Institution } from "../utils/institutionData";
 
 export default function TransferPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentAccount, setCurrentAccount] = useState<any>(null);
+  const { account } = useAuth();
+  const createTransaction = useMutation(api.transactions.createTransaction);
   const [formData, setFormData] = useState({
     routingNumber: "",
     accountNumber: "",
@@ -30,33 +33,6 @@ export default function TransferPage() {
   const [showInstitutionDropdown, setShowInstitutionDropdown] = useState(false);
   const [selectedInstitution, setSelectedInstitution] = useState<Institution | null>(null);
   const institutionSearchRef = useRef<HTMLDivElement>(null);
-
-  // Get current user account from localStorage
-  useEffect(() => {
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-      try {
-        const user = JSON.parse(savedUser);
-        // If this is a regular user account (not admin)
-        if (!user.isAdmin && user.id) {
-          // Get the account details
-          const fetchAccount = async () => {
-            try {
-              const account = await db.getAccountById(user.id);
-              if (account) {
-                setCurrentAccount(account);
-              }
-            } catch (err) {
-              console.error('Error fetching account:', err);
-            }
-          };
-          fetchAccount();
-        }
-      } catch (err) {
-        console.error('Error parsing user data:', err);
-      }
-    }
-  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -109,7 +85,7 @@ export default function TransferPage() {
 
     try {
       // Check if we have a current account
-      if (!currentAccount) {
+      if (!account) {
         throw new Error('No account found. Please log in again.');
       }
 
@@ -120,40 +96,19 @@ export default function TransferPage() {
       }
 
       // Check if user has enough balance
-      if (amount > currentAccount.balance) {
+      if (amount > account.balance) {
         throw new Error('Insufficient funds for this transfer.');
       }
 
       // Create transaction record
-      const transaction = {
-        id: Date.now().toString(),
-        fromAccountId: currentAccount.id.toString(),
-        toAccountId: formData.accountNumber,
+      await createTransaction({
+        fromAccountId: account._id,
         amount: amount,
-        status: 'completed' as 'completed' | 'pending' | 'rejected', // Type assertion to match the expected type
-        createdAt: new Date(),
-        recipientName: 'External Recipient',
         recipientAccountNumber: formData.accountNumber,
         recipientRoutingNumber: formData.routingNumber,
         recipientBankName: formData.bankName,
         description: 'Transfer to external account'
-      };
-
-      // Update account balance
-      const newBalance = currentAccount.balance - amount;
-      await db.updateAccountBalance(currentAccount.id, newBalance);
-
-      // Create transaction record in database
-      await db.createTransaction(transaction);
-      // Note: transaction history is now handled by the database service
-
-      // Update local storage with new balance
-      const savedUser = localStorage.getItem('currentUser');
-      if (savedUser) {
-        const user = JSON.parse(savedUser);
-        user.balance = newBalance;
-        localStorage.setItem('currentUser', JSON.stringify(user));
-      }
+      });
 
       // Redirect to success page with transfer details
       const institutionNames: Record<string, string> = {
@@ -196,10 +151,10 @@ export default function TransferPage() {
             </Alert>
           )}
 
-          {currentAccount && (
+          {account && (
             <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-md">
               <p className="text-sm font-medium">Available Balance</p>
-              <p className="text-xl font-bold">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(currentAccount.balance)}</p>
+              <p className="text-xl font-bold">{new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(account.balance)}</p>
             </div>
           )}
 

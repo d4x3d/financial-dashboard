@@ -1,27 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { db, User } from '../../services/supabaseDb';
+import React, { useState } from 'react';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 import { PlusCircle, Edit, Trash, X, Check, Loader } from 'lucide-react';
 
 const UserManagement: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
+  const users = useQuery(api.admin.getUsers);
+  const createUser = useMutation(api.admin.createUser);
+  const createAccount = useMutation(api.admin.createAccount);
+  const deleteUser = useMutation(api.admin.deleteUser);
 
-  useEffect(() => {
-    // This would need to be implemented in the supabaseDb service
-    const fetchUsers = async () => {
-      try {
-        // Assuming we have a method to get all users
-        // const usersData = await db.getUsers();
-        // setUsers(usersData);
-
-        // For now, we'll use an empty array
-        setUsers([]);
-      } catch (error) {
-        console.error('Error fetching users:', error);
-      }
-    };
-
-    fetchUsers();
-  }, []);
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,41 +34,22 @@ const UserManagement: React.FC = () => {
     setError(null);
 
     try {
-      // Check if username already exists
-      const existingUser = await db.getUserByUserid(formData.username);
-      if (existingUser) {
-        setError('Username already exists');
-        setIsLoading(false);
-        return;
-      }
-
-      // Add user to database
-      const newUser = {
-        userid: formData.username,
+      await createUser({
+        userId: formData.username,
         password: formData.password,
         fullName: formData.fullName,
         email: formData.email,
         isAdmin: formData.isAdmin,
-        createdAt: new Date()
-      };
+      });
 
-      const userId = await db.createUser(newUser);
-
-      if (userId) {
-        // Create a default account for the user
-        const newAccount = {
-          userid: formData.username,
-          password: formData.password,
-          displayName: formData.fullName,
-          accountNumber: generateAccountNumber(),
-          routingNumber: '123456789', // Using a fixed routing number for simplicity
-          balance: 1000, // Starting balance of $1000
-          accountType: 'Checking',
-          createdAt: new Date()
-        };
-
-        await db.createAccount(newAccount);
-      }
+      await createAccount({
+        userId: formData.username,
+        displayName: formData.fullName,
+        accountNumber: generateAccountNumber(),
+        routingNumber: '123456789', // Using a fixed routing number for simplicity
+        balance: 1000, // Starting balance of $1000
+        accountType: 'Checking',
+      });
 
       // Reset form
       setFormData({
@@ -103,17 +71,7 @@ const UserManagement: React.FC = () => {
   const handleDeleteUser = async (userId: string) => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
-        // In a real implementation, we would delete the user and their accounts
-        // For now, we'll just show an alert
-        alert('User deletion is not implemented in this demo');
-
-        // Refresh the user list
-        const fetchUsers = async () => {
-          // For now, we'll use an empty array
-          setUsers([]);
-        };
-
-        fetchUsers();
+        await deleteUser({ userId });
       } catch (error) {
         console.error('Error deleting user:', error);
         alert('Failed to delete user');
@@ -288,7 +246,7 @@ const UserManagement: React.FC = () => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {users?.map((user) => (
-              <tr key={user.id} className="hover:bg-gray-50">
+              <tr key={user._id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10 bg-wf-red rounded-full flex items-center justify-center text-white">
@@ -296,7 +254,7 @@ const UserManagement: React.FC = () => {
                     </div>
                     <div className="ml-4">
                       <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
-                      <div className="text-sm text-gray-500">{user.username}</div>
+                      <div className="text-sm text-gray-500">{user.userId}</div>
                     </div>
                   </div>
                 </td>
@@ -311,7 +269,7 @@ const UserManagement: React.FC = () => {
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {new Date(user.createdAt).toLocaleDateString()}
+                  {new Date(user._creationTime).toLocaleDateString()}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <button className="text-indigo-600 hover:text-indigo-900 mr-3">
@@ -319,7 +277,7 @@ const UserManagement: React.FC = () => {
                   </button>
                   <button
                     className="text-red-600 hover:text-red-900"
-                    onClick={() => user.id && handleDeleteUser(user.id)}
+                    onClick={() => user._id && handleDeleteUser(user._id)}
                   >
                     <Trash className="h-5 w-5" />
                   </button>

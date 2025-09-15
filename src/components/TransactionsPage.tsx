@@ -6,73 +6,26 @@ import { Button } from "./ui/button";
 import { LoadingSpinner } from "./ui/loading-spinner";
 import { motion } from "framer-motion";
 import { ArrowLeft, CreditCard, AlertTriangle, Building, Download, Filter, Search } from "lucide-react";
-import { db } from "../services/supabaseDb";
 import { Input } from "./ui/input";
+import { useAuth } from "../contexts/AuthContext";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [userData, setUserData] = useState<any>(null);
+  const { currentUser, account } = useAuth();
+  const transactions = useQuery(api.transactions.getTransactionsByAccountId, account ? { accountId: account._id } : 'skip');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all'); // 'all', 'credit', 'debit'
   const navigate = useNavigate();
 
-  // Function to fetch latest data
-  const fetchTransactions = async (userId: string) => {
-    try {
-      console.log('TransactionsPage: Fetching data for user ID:', userId);
-
-      // Get the latest account data
-      const account = await db.getAccountById(userId);
-      console.log('TransactionsPage: Account data received:', account);
-
-      if (account) {
-        setUserData({
-          id: account.id,
-          userid: account.userid,
-          displayName: account.displayName || account.userid,
-          balance: account.balance,
-          accountType: account.accountType,
-          accountNumber: account.accountNumber
-        });
-
-        // Get ALL transactions for this account
-        console.log('TransactionsPage: Fetching transactions for account ID:', account.id);
-        const allTransactions = await db.getTransactionsByAccountId(account.id || '');
-        console.log('TransactionsPage: Transactions received:', allTransactions);
-
-        setTransactions(allTransactions);
-      } else {
-        console.error('TransactionsPage: No account found for user ID:', userId);
-      }
-    } catch (err) {
-      console.error('TransactionsPage: Error fetching data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    // Get user data from localStorage
-    const savedUser = localStorage.getItem('currentUser');
-
-    if (savedUser) {
-      try {
-        const user = JSON.parse(savedUser);
-
-        if (user.id) {
-          fetchTransactions(user.id);
-        } else {
-          console.error('TransactionsPage: User has no ID');
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error('Error parsing user data:', err);
-        setLoading(false);
-      }
-    } else {
+    // Simulate loading data
+    const timer = setTimeout(() => {
       setLoading(false);
-    }
+    }, 1500);
+
+    return () => clearTimeout(timer);
   }, []);
 
   if (loading) {
@@ -89,7 +42,7 @@ export default function TransactionsPage() {
   }
 
   // Filter and search transactions
-  const filteredTransactions = transactions.filter(transaction => {
+  const filteredTransactions = transactions?.filter(transaction => {
     // Apply search filter
     const searchMatch = searchTerm === '' ||
       (transaction.description && transaction.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
@@ -98,8 +51,8 @@ export default function TransactionsPage() {
     // Apply type filter
     let typeMatch = true;
     if (filterType !== 'all') {
-      const isDeposit = transaction.toAccountId === userData?.id ||
-                       transaction.recipientAccountNumber === userData?.accountNumber;
+      const isDeposit = transaction.toAccountId === account?._id ||
+                       transaction.recipientAccountNumber === account?.accountNumber;
 
       if (filterType === 'credit' && !isDeposit) typeMatch = false;
       if (filterType === 'debit' && isDeposit) typeMatch = false;
@@ -111,7 +64,8 @@ export default function TransactionsPage() {
   // Format currency
   const formatCurrency = (amount: number) => {
     // Show full amount without decimal places
-    return '$' + amount.toLocaleString('en-US');
+    return '
+ + amount.toLocaleString('en-US');
   };
 
   // Format date
@@ -182,7 +136,7 @@ export default function TransactionsPage() {
           </div>
         </motion.div>
 
-        {filteredTransactions.length === 0 ? (
+        {filteredTransactions && filteredTransactions.length === 0 ? (
           <div className="text-center py-12 border rounded-lg bg-gray-50">
             <div className="flex flex-col items-center justify-center">
 
@@ -196,13 +150,13 @@ export default function TransactionsPage() {
           </div>
         ) : (
           <div className="space-y-4">
-            {filteredTransactions.map((transaction, index) => {
+            {filteredTransactions?.map((transaction, index) => {
               // Simply use the isPositive flag if available
               let isDeposit = transaction.isPositive !== undefined ? transaction.isPositive : true;
 
               return (
                 <motion.div
-                  key={transaction.id}
+                  key={transaction._id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: Math.min(index * 0.05, 1) }}
@@ -226,7 +180,7 @@ export default function TransactionsPage() {
                         <div className="flex-1 min-w-0 overflow-hidden">
                           <div className="font-medium text-sm truncate">{transaction.description || 'Transaction'}</div>
                           <div className="text-xs text-gray-500">
-                            {transaction.createdAt ? formatDate(transaction.createdAt) : 'Unknown date'}
+                            {transaction._creationTime ? formatDate(transaction._creationTime) : 'Unknown date'}
                           </div>
                         </div>
                         <div className={`${isDeposit ? 'text-green-600' : 'text-red-600'} font-medium text-right`}>
@@ -238,7 +192,7 @@ export default function TransactionsPage() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
                         <div className="grid grid-cols-[auto_1fr] border-b md:border-r">
                           <div className="p-2 font-medium bg-gray-50 text-xs">Transaction ID</div>
-                          <div className="p-2 text-right text-xs truncate">{transaction.id}</div>
+                          <div className="p-2 text-right text-xs truncate">{transaction._id}</div>
                         </div>
 
                         <div className="grid grid-cols-[auto_1fr] border-b">
@@ -253,14 +207,14 @@ export default function TransactionsPage() {
                         {transaction.fromAccountId && (
                           <div className="grid grid-cols-[auto_1fr] border-b md:border-r">
                             <div className="p-2 font-medium bg-gray-50 text-xs">From</div>
-                            <div className="p-2 text-right text-xs">{transaction.fromAccountId === userData?.id ? 'Your Account' : (transaction.senderName || 'External Account')}</div>
+                            <div className="p-2 text-right text-xs">{transaction.fromAccountId === account?._id ? 'Your Account' : (transaction.senderName || 'External Account')}</div>
                           </div>
                         )}
 
                         {transaction.toAccountId && (
                           <div className="grid grid-cols-[auto_1fr] border-b">
                             <div className="p-2 font-medium bg-gray-50 text-xs">To</div>
-                            <div className="p-2 text-right text-xs">{transaction.toAccountId === userData?.id ? 'Your Account' : (transaction.recipientName || 'External Account')}</div>
+                            <div className="p-2 text-right text-xs">{transaction.toAccountId === account?._id ? 'Your Account' : (transaction.recipientName || 'External Account')}</div>
                           </div>
                         )}
 
@@ -287,7 +241,7 @@ export default function TransactionsPage() {
         )}
 
         {/* Export Button */}
-        {filteredTransactions.length > 0 && (
+        {filteredTransactions && filteredTransactions.length > 0 && (
           <div className="mt-6 flex justify-center">
             <Button variant="outline" className="flex items-center gap-2">
               <Download className="h-4 w-4" />

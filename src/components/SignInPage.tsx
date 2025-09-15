@@ -1,10 +1,9 @@
 import { useState, FormEvent, useEffect } from 'react';
-// We're using window.location.href instead of useNavigate for a full page reload
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import NavBar from './NavBar';
 import Footer from './Footer';
-import { db } from '../services/supabaseDb';
+import { useAuth } from '../contexts/AuthContext';
 import MobileApp from './MobileApp';
 import Services from './Services';
 import Featured from './Featured';
@@ -20,6 +19,7 @@ const SignInPage = () => {
 
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { login } = useAuth();
 
   // Set greeting based on time of day
   useEffect(() => {
@@ -39,78 +39,11 @@ const SignInPage = () => {
     setIsLoading(true);
 
     try {
-      console.log('Attempting to sign in with userid:', userid);
-
-      // Try to authenticate using the authenticateUser method
-      const user = await db.authenticateUser(userid, password);
-      console.log('Authentication response:', user);
-
-      // If we found a user in the users table, we need to find their account
-      if (user) {
-        console.log('User found, checking if they have an account');
-
-        // Try to find the account for this user
-        const account = await db.getAccountByUserid(userid);
-        console.log('Account lookup result:', account);
-
-        if (account) {
-          // Store user info in localStorage
-          const userData = {
-            id: account.id,
-            userid: account.userid,
-            displayName: account.displayName || account.userid,
-            balance: account.balance,
-            accountType: account.accountType,
-            accountNumber: account.accountNumber
-          };
-
-          console.log('Storing user data in localStorage:', userData);
-          localStorage.setItem('currentUser', JSON.stringify(userData));
-
-          // Navigate to dashboard using window.location for a full page reload
-          console.log('Login successful, redirecting to dashboard');
-          window.location.href = '/dashboard';
-          return;
-        } else {
-          console.log('User exists but has no account');
-          throw new Error('No account found for this user');
-        }
-      } else {
-        console.log('No user found, trying direct account lookup');
-        // Fall back to direct account lookup
-        const account = await db.getAccountByUserid(userid);
-        console.log('Direct account lookup result:', account);
-
-        if (!account) {
-          throw new Error('Invalid User ID or password');
-        }
-
-        // Special case for admin account which might not have password in DB
-        if (userid === 'admin' && password === 'admin123') {
-          console.log('Admin login detected');
-          // Allow admin login with hardcoded credentials
-        } else if (account.password !== password) {
-          console.log('Password mismatch');
-          throw new Error('Invalid User ID or password');
-        }
-
-        // Store user info in localStorage
-        const userData = {
-          id: account.id,
-          userid: account.userid,
-          displayName: account.displayName || account.userid,
-          balance: account.balance,
-          accountType: account.accountType,
-          accountNumber: account.accountNumber
-        };
-
-        console.log('Storing user data in localStorage:', userData);
-        localStorage.setItem('currentUser', JSON.stringify(userData));
-
-        // Navigate to dashboard using window.location for a full page reload
-        console.log('Login successful, redirecting to dashboard');
+      const success = await login(userid, password);
+      if (success) {
         window.location.href = '/dashboard';
-        return;
+      } else {
+        setError('Invalid User ID or password');
       }
     } catch (err: any) {
       console.error('Login error:', err);

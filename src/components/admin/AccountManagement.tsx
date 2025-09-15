@@ -1,35 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { db, Account, User } from '../../services/supabaseDb';
+import React, { useState } from 'react';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 import { DollarSign, Edit, Loader, Check, X } from 'lucide-react';
 
 const AccountManagement: React.FC = () => {
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch accounts
-        const accountsData = await db.getAccounts();
-        setAccounts(accountsData);
-
-        // Fetch users (assuming we have a method to get all users)
-        // In a real implementation, we would have this method
-        // For now, we'll create a dummy user for testing
-        setUsers([{
-          id: 'dummy-user-id',
-          userid: 'admin',
-          fullName: 'Admin User',
-          isAdmin: true,
-          createdAt: new Date()
-        }]);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-
-    fetchData();
-  }, []);
+  const accounts = useQuery(api.admin.getAccounts);
+  const users = useQuery(api.admin.getUsers);
+  const updateAccountBalance = useMutation(api.admin.updateAccountBalance);
 
   const [isEditingBalance, setIsEditingBalance] = useState<string | null>(null);
   const [newBalance, setNewBalance] = useState<string>('');
@@ -39,7 +16,7 @@ const AccountManagement: React.FC = () => {
   // Get user name by ID
   const getUserName = (userId?: string): string => {
     if (!userId) return 'Unknown User';
-    const user = users?.find(user => user.id === userId);
+    const user = users?.find(user => user.userId === userId);
     return user && user.fullName ? user.fullName : 'Unknown User';
   };
 
@@ -52,8 +29,8 @@ const AccountManagement: React.FC = () => {
   };
 
   // Handle balance edit
-  const handleEditBalance = (account: Account) => {
-    setIsEditingBalance(account.id || null);
+  const handleEditBalance = (account: any) => {
+    setIsEditingBalance(account._id || null);
     setNewBalance(account.balance.toString());
   };
 
@@ -68,7 +45,7 @@ const AccountManagement: React.FC = () => {
     setError(null);
 
     try {
-      await db.updateAccountBalance(accountId, Number(newBalance));
+      await updateAccountBalance({ accountId, balance: Number(newBalance) });
       setIsEditingBalance(null);
     } catch (error) {
       console.error('Error updating balance:', error);
@@ -120,7 +97,7 @@ const AccountManagement: React.FC = () => {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {accounts?.map((account) => (
-              <tr key={account.id} className="hover:bg-gray-50">
+              <tr key={account._id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
@@ -145,7 +122,7 @@ const AccountManagement: React.FC = () => {
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  {isEditingBalance === account.id ? (
+                  {isEditingBalance === account._id ? (
                     <div className="flex items-center">
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -160,7 +137,7 @@ const AccountManagement: React.FC = () => {
                       </div>
                       <div className="ml-2 flex space-x-1">
                         <button
-                          onClick={() => account.id && handleUpdateBalance(account.id)}
+                          onClick={() => account._id && handleUpdateBalance(account._id)}
                           disabled={isLoading}
                           className="text-green-600 hover:text-green-900"
                         >
@@ -185,7 +162,7 @@ const AccountManagement: React.FC = () => {
                   )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  {isEditingBalance !== account.id && (
+                  {isEditingBalance !== account._id && (
                     <button
                       onClick={() => handleEditBalance(account)}
                       className="text-indigo-600 hover:text-indigo-900"

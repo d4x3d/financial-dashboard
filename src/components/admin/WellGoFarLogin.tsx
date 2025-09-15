@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, Loader } from 'lucide-react';
-import { supabase } from '../../services/supabase';
+import { useMutation } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 
 const WellGoFarLogin: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const login = useMutation(api.admin.login);
 
   const navigate = useNavigate();
 
@@ -19,23 +21,16 @@ const WellGoFarLogin: React.FC = () => {
     try {
       console.log('Attempting to sign in with:', { email });
 
-      // Sign in with Supabase
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      // Sign in with Convex
+      const admin = await login({ email, password });
 
-      console.log('Sign in response:', { data, error });
+      console.log('Sign in response:', { admin });
 
-      if (error) {
-        throw error;
-      }
-
-      if (data && data.user) {
-        console.log('Login successful, user:', data.user);
+      if (admin) {
+        console.log('Login successful, user:', admin);
 
         // Store the session in localStorage
-        localStorage.setItem('wellgofar_admin', JSON.stringify(data.session));
+        localStorage.setItem('wellgofar_admin', JSON.stringify(admin));
 
         // Force a page reload to ensure the auth state is properly updated
         window.location.href = '/wellgofar';
@@ -78,7 +73,7 @@ const WellGoFarLogin: React.FC = () => {
           Sign in to manage user accounts and balances
         </p>
         <p className="mt-1 text-center text-xs text-gray-500">
-          Only admin uses Supabase auth. Regular users are stored in the database.
+          Only admin uses Convex auth. Regular users are stored in the database.
         </p>
       </div>
 
@@ -153,7 +148,7 @@ const WellGoFarLogin: React.FC = () => {
               </div>
               <div className="relative flex justify-center text-sm">
                 <span className="px-2 bg-white text-gray-500">
-                  First login creates the admin account (Supabase auth)
+                  First login creates the admin account (Convex auth)
                 </span>
               </div>
             </div>

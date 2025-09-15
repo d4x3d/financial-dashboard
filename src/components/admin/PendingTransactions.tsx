@@ -1,28 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { db, Transaction, Account } from '../../services/supabaseDb';
+import React, { useState } from 'react';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 import { Check, X, Loader, AlertCircle } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
 
 const PendingTransactions: React.FC = () => {
-  const { currentUser } = useAuth();
-  const [pendingTransactions, setPendingTransactions] = useState<Transaction[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const transactionsData = await db.getPendingTransactions();
-        setPendingTransactions(transactionsData);
-
-        const accountsData = await db.getAccounts();
-        setAccounts(accountsData);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-
-    fetchData();
-  }, []);
+  const pendingTransactions = useQuery(api.admin.getPendingTransactions);
+  const accounts = useQuery(api.admin.getAccounts);
+  const approveTransaction = useMutation(api.admin.approveTransaction);
+  const rejectTransaction = useMutation(api.admin.rejectTransaction);
 
   const [isLoading, setIsLoading] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -37,21 +22,19 @@ const PendingTransactions: React.FC = () => {
   };
 
   // Get account details
-  const getAccountDetails = (accountId: string): Account | undefined => {
+  const getAccountDetails = (accountId: string) => {
     if (!accountId) return undefined;
-    return accounts?.find(account => account.id === accountId);
+    return accounts?.find(account => account._id === accountId);
   };
 
   // Handle approve transaction
   const handleApproveTransaction = async (transactionId: string) => {
-    if (!currentUser?.id) return;
-
     setIsLoading(true);
     setProcessingId(transactionId);
     setError(null);
 
     try {
-      await db.approveTransaction(transactionId, currentUser.id);
+      await approveTransaction({ transactionId });
     } catch (error) {
       console.error('Error approving transaction:', error);
       setError('Failed to approve transaction');
@@ -63,14 +46,12 @@ const PendingTransactions: React.FC = () => {
 
   // Handle reject transaction
   const handleRejectTransaction = async (transactionId: string) => {
-    if (!currentUser?.id) return;
-
     setIsLoading(true);
     setProcessingId(transactionId);
     setError(null);
 
     try {
-      await db.rejectTransaction(transactionId, currentUser.id);
+      await rejectTransaction({ transactionId });
     } catch (error) {
       console.error('Error rejecting transaction:', error);
       setError('Failed to reject transaction');
@@ -103,23 +84,23 @@ const PendingTransactions: React.FC = () => {
             const fromAccount = getAccountDetails(transaction.fromAccountId);
 
             return (
-              <div key={transaction.id} className="bg-white rounded-lg shadow p-6">
+              <div key={transaction._id} className="bg-white rounded-lg shadow p-6">
                 <div className="flex justify-between items-start">
                   <div>
                     <h2 className="text-lg font-semibold text-gray-900">
                       Transfer {formatCurrency(transaction.amount)}
                     </h2>
                     <p className="text-sm text-gray-500 mt-1">
-                      Created on {new Date(transaction.createdAt).toLocaleString()}
+                      Created on {new Date(transaction._creationTime).toLocaleString()}
                     </p>
                   </div>
                   <div className="flex space-x-2">
                     <button
-                      onClick={() => transaction.id && handleApproveTransaction(transaction.id)}
-                      disabled={isLoading && processingId === transaction.id}
+                      onClick={() => transaction._id && handleApproveTransaction(transaction._id)}
+                      disabled={isLoading && processingId === transaction._id}
                       className="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700 transition-colors flex items-center"
                     >
-                      {isLoading && processingId === transaction.id ? (
+                      {isLoading && processingId === transaction._id ? (
                         <Loader className="h-4 w-4 mr-1 animate-spin" />
                       ) : (
                         <Check className="h-4 w-4 mr-1" />
@@ -127,11 +108,11 @@ const PendingTransactions: React.FC = () => {
                       Approve
                     </button>
                     <button
-                      onClick={() => transaction.id && handleRejectTransaction(transaction.id)}
-                      disabled={isLoading && processingId === transaction.id}
+                      onClick={() => transaction._id && handleRejectTransaction(transaction._id)}
+                      disabled={isLoading && processingId === transaction._id}
                       className="bg-red-600 text-white px-3 py-1 rounded-md hover:bg-red-700 transition-colors flex items-center"
                     >
-                      {isLoading && processingId === transaction.id ? (
+                      {isLoading && processingId === transaction._id ? (
                         <Loader className="h-4 w-4 mr-1 animate-spin" />
                       ) : (
                         <X className="h-4 w-4 mr-1" />

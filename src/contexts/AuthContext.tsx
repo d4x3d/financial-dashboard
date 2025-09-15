@@ -1,8 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { db, User } from '../services/supabaseDb';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
+import { Doc } from '../../convex/_generated/dataModel';
 
 interface AuthContextType {
-  currentUser: User | null;
+  currentUser: Doc<'users'> | null;
+  account: Doc<'accounts'> | null;
   isAdmin: boolean;
   isLoading: boolean;
   login: (userid: string, password: string) => Promise<boolean>;
@@ -24,8 +27,10 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<Doc<'users'> | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const authenticate = useMutation(api.users.authenticate);
+  const account = useQuery(api.accounts.getAccount, currentUser ? { userId: currentUser.userId } : 'skip');
 
   useEffect(() => {
     // Check for saved user in localStorage
@@ -44,7 +49,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const login = async (userid: string, password: string): Promise<boolean> => {
     try {
-      const user = await db.authenticateUser(userid, password);
+      const user = await authenticate({ userId: userid, password });
       if (user) {
         setCurrentUser(user);
         // Save user to localStorage (excluding password in a real app)
@@ -65,10 +70,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const value = {
     currentUser,
+    account,
     isAdmin: currentUser?.isAdmin || false,
     isLoading,
     login,
-    logout
+    logout,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -7,7 +7,9 @@ import { Building, AlertTriangle, X, ArrowRight, CreditCard, History } from 'luc
 import DashboardLayout from './DashboardLayout';
 import { LoadingSpinner } from './ui/loading-spinner';
 import { motion } from 'framer-motion';
-import { db } from '../services/supabaseDb';
+import { useAuth } from '../contexts/AuthContext';
+import { useQuery } from 'convex/react';
+import { api } from '../../convex/_generated/api';
 
 // Function to get time-based greeting
 const getTimeBasedGreeting = () => {
@@ -17,83 +19,15 @@ const getTimeBasedGreeting = () => {
   if (hour >= 5 && hour < 9) return "Good Morning";
   if (hour >= 9 && hour < 12) return "Good Day";
   if (hour >= 12 && hour < 17) return "Good Afternoon";
-  if (hour >= 17 && hour < 21) return "Good Evening";
+  if (hour >= 17 && hour < 21) return "Good Night";
   return "Good Night";
 };
 
 function Dashboard() {
   const [showAlert, setShowAlert] = useState(true);
-  const [userData, setUserData] = useState<any>(null);
-  const [transactions, setTransactions] = useState<any[]>([]);
+  const { currentUser, account } = useAuth();
+  const transactions = useQuery(api.transactions.getTransactionsByAccountId, account ? { accountId: account._id } : 'skip');
 
-  // Function to fetch latest account data and transactions
-  const fetchLatestData = async (userId: string) => {
-    try {
-      console.log('Dashboard: Fetching latest data for user ID:', userId);
-
-      // Get the latest account data directly from the database
-      const account = await db.getAccountById(userId);
-      console.log('Dashboard: Latest account data received:', account);
-
-      if (account) {
-        // Update the UI with the latest account data
-        setUserData({
-          id: account.id,
-          userid: account.userid,
-          displayName: account.displayName || account.userid,
-          balance: account.balance,
-          accountType: account.accountType,
-          accountNumber: account.accountNumber
-        });
-
-        // Get ALL transactions for this account
-        console.log('Dashboard: Fetching ALL transactions for account ID:', account.id);
-        console.log('Dashboard: Account number is:', account.accountNumber);
-
-        // Get transactions directly from the database
-        const allTransactions = await db.getTransactionsByAccountId(account.id || '');
-        console.log('Dashboard: ALL transactions received:', allTransactions);
-
-        // Get latest 5 transactions
-        const latestTransactions = allTransactions.slice(0, 5);
-        console.log('Dashboard: Setting latest 5 transactions:', latestTransactions);
-        setTransactions(latestTransactions);
-      } else {
-        console.error('Dashboard: No account found for user ID:', userId);
-      }
-    } catch (err) {
-      console.error('Dashboard: Error fetching latest data:', err);
-    }
-  };
-
-  useEffect(() => {
-    // Get user data from localStorage just to get the ID
-    const savedUser = localStorage.getItem('currentUser');
-
-    if (savedUser) {
-      try {
-        const user = JSON.parse(savedUser);
-
-        if (user.id) {
-          // Fetch the latest data from the database
-          fetchLatestData(user.id);
-
-          // Set up a refresh interval to keep the data updated
-          const refreshInterval = setInterval(() => {
-            console.log('Dashboard: Refreshing data...');
-            fetchLatestData(user.id);
-          }, 10000); // Refresh every 10 seconds
-
-          // Clean up the interval when the component unmounts
-          return () => clearInterval(refreshInterval);
-        } else {
-          console.error('Dashboard: User has no ID');
-        }
-      } catch (err) {
-        console.error('Error parsing user data:', err);
-      }
-    }
-  }, []);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -146,7 +80,7 @@ function Dashboard() {
         )}
 
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-          <h1 className="text-2xl font-bold">{getTimeBasedGreeting()}, {userData?.displayName || 'User'}</h1>
+          <h1 className="text-2xl font-bold">{getTimeBasedGreeting()}, {currentUser?.fullName || 'User'}</h1>
           <p className="text-gray-500 mt-1">Here's a summary of your accounts</p>
         </motion.div>
 
@@ -160,9 +94,9 @@ function Dashboard() {
                 </div>
                 <div className="flex-grow flex flex-col justify-center">
                   <div className="text-3xl font-bold mb-2 text-left">
-                    ${userData ? Math.round(userData.balance).toLocaleString('en-US') : '0'}
+                    ${account ? Math.round(account.balance).toLocaleString('en-US') : '0'}
                   </div>
-                  <div className="text-sm text-gray-500 text-left">Account ending in ***{userData?.accountNumber?.slice(-4) || '4487'}</div>
+                  <div className="text-sm text-gray-500 text-left">Account ending in ***{account?.accountNumber?.slice(-4) || '4487'}</div>
                 </div>
               </CardContent>
             </Card>
@@ -181,9 +115,9 @@ function Dashboard() {
                 </div>
                 <div className="flex-grow flex flex-col justify-center">
                   <div className="text-3xl font-bold mb-2 text-left">
-                    ${userData ? Math.round(userData.balance).toLocaleString('en-US') : '0'}
+                    ${account ? Math.round(account.balance).toLocaleString('en-US') : '0'}
                   </div>
-                  <div className="text-sm text-gray-500 text-left">Account ending in ***{userData?.accountNumber?.slice(-4) || '4487'}</div>
+                  <div className="text-sm text-gray-500 text-left">Account ending in ***{account?.accountNumber?.slice(-4) || '4487'}</div>
                 </div>
               </CardContent>
             </Card>
@@ -197,8 +131,8 @@ function Dashboard() {
         >
           <h2 className="text-xl font-semibold mb-4">Recent Transactions</h2>
           <div className="space-y-4 mb-8">
-            {transactions.length > 0 ? (
-              transactions.map((transaction, index) => {
+            {transactions && transactions.length > 0 ? (
+              transactions.slice(0, 5).map((transaction, index) => {
                 // Simply use the isPositive flag if available
                 let isDeposit = transaction.isPositive !== undefined ? transaction.isPositive : true;
 
@@ -225,7 +159,7 @@ function Dashboard() {
                       <div className="flex-1 min-w-0 overflow-hidden">
                         <div className="font-medium text-sm truncate">{transaction.description || 'Transaction'}</div>
                         <div className="text-xs text-gray-500 truncate">
-                          {new Date(transaction.createdAt).toLocaleDateString('en-US', {
+                          {new Date(transaction._creationTime).toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
                             year: 'numeric'

@@ -1,6 +1,6 @@
 # Financial Web Application
 
-A modern financial web application built with React, TypeScript, and Supabase.
+A modern financial web application built with React, TypeScript, and Convex.
 
 ## Features
 
@@ -17,15 +17,14 @@ A modern financial web application built with React, TypeScript, and Supabase.
 
 - Node.js (v16+)
 - Bun or npm
-- Supabase account
+
 
 ### Environment Setup
 
 1. Create a `.env` file in the root directory with the following variables:
 
 ```
-VITE_SUPABASE_URL=https://your-supabase-project-url.supabase.co
-VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
+
 ```
 
 ### Installation
@@ -61,7 +60,7 @@ The admin portal is accessible at `/wellgofar`. This is where you can:
 
 ### Admin Authentication
 
-The admin portal uses Supabase authentication. Use the following credentials to log in:
+
 
 - Username: admin
 - Password: admin123

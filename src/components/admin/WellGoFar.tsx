@@ -1,18 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Input } from '../ui/input';
 import { LoadingSpinner } from '../ui/loading-spinner';
-import { db } from '../../services/supabaseDb';
 import { Alert, AlertDescription } from '../ui/alert';
 import { CheckCircle2, AlertTriangle, Plus, Trash2, DollarSign, LogOut, MinusCircle } from 'lucide-react';
-import { supabase } from '../../services/supabase';
+import { useQuery, useMutation } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 
 export default function WellGoFar() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const accounts = useQuery(api.admin.getAccounts);
+  const createAccount = useMutation(api.admin.createAccount);
+  const createUser = useMutation(api.admin.createUser);
+  const addBalanceMutation = useMutation(api.admin.addBalance);
+  const deductBalanceMutation = useMutation(api.admin.deductBalance);
+  const deleteAccountMutation = useMutation(api.admin.deleteAccount);
+
   const [notification, setNotification] = useState<{
     type: 'success' | 'error';
     message: string;
@@ -49,25 +55,6 @@ export default function WellGoFar() {
     description: 'Balance deducted by admin',
     isInvisible: false // Whether this transaction should be visible to the user
   });
-
-  // Load accounts
-  useEffect(() => {
-    loadAccounts();
-  }, []);
-
-  const loadAccounts = async () => {
-    setLoading(true);
-    try {
-      // Fetch accounts from Supabase
-      const accountsData = await db.getAccounts();
-      setAccounts(accountsData);
-    } catch (error) {
-      console.error('Error loading accounts:', error);
-      showNotification('error', 'Failed to load accounts');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Show notification helper
   const showNotification = (type: 'success' | 'error', message: string) => {
@@ -143,59 +130,19 @@ export default function WellGoFar() {
       const accountNumber = newAccount.accountNumber ||
         Math.floor(10000000 + Math.random() * 90000000).toString();
 
-      // First, create the user if they don't exist
-      const existingUser = await db.getUserByUserid(newAccount.userid);
+      await createUser({
+        userId: newAccount.userid,
+        password: newAccount.password,
+        fullName: newAccount.displayName || newAccount.userid,
+      });
 
-      if (!existingUser) {
-        console.log('User does not exist, creating user first...');
-
-        // Create the user
-        const newUserData = {
-          userid: newAccount.userid,
-          password: newAccount.password,
-          fullName: newAccount.displayName || newAccount.userid,
-          email: '',  // You might want to add an email field to your form
-          isAdmin: false,
-          createdAt: new Date()
-        };
-
-        const userId = await db.createUser(newUserData);
-
-        if (!userId) {
-          throw new Error('Failed to create user');
-        }
-
-        console.log('User created successfully with ID:', userId);
-      } else {
-        console.log('User already exists, proceeding with account creation');
-      }
-
-      // Now add the account to database
-      const newAccountData: any = {
-        userid: newAccount.userid,
+      await createAccount({
+        userId: newAccount.userid,
         displayName: newAccount.displayName || newAccount.userid,
         accountType: newAccount.accountType,
         accountNumber: accountNumber,
         balance: parseFloat(newAccount.balance) || 0,
-        createdAt: new Date()
-      };
-
-      // Only include password if it's provided (some Supabase schemas might not have this column)
-      if (newAccount.password) {
-        newAccountData.password = newAccount.password;
-      }
-
-      // Log the account data we're trying to create
-      console.log('Creating account with data:', newAccountData);
-
-      const accountId = await db.createAccount(newAccountData);
-
-      if (!accountId) {
-        throw new Error('Failed to create account');
-      }
-
-      // Refresh accounts list
-      await loadAccounts();
+      });
 
       // Reset form
       setNewAccount({
@@ -227,19 +174,8 @@ export default function WellGoFar() {
       const description = addBalance.description;
       const { isInvisible } = addBalance;
 
-      console.log('WellGoFar: Adding balance with:', { accountId, amount, description });
-
       if (!accountId || isNaN(amount)) {
         throw new Error('Invalid account ID or amount');
-      }
-
-      // Get current account
-      console.log('WellGoFar: Getting account by ID:', accountId);
-      const account = await db.getAccountById(accountId);
-      console.log('WellGoFar: Account data received:', account);
-
-      if (!account) {
-        throw new Error('Account not found');
       }
 
       // Calculate tax and fees based on admin settings
@@ -254,86 +190,33 @@ export default function WellGoFar() {
       // Calculate net amount after deductions
       const netAmount = amount - taxAmount - feeAmount;
 
-      console.log('WellGoFar: Calculating taxes and fees:', {
-        amount,
-        taxApplied: applyTax,
-        taxRate: taxRate + '%',
-        taxAmount,
-        feeApplied: applyFee,
-        feeRate: feeRate + '%',
-        feeAmount,
-        netAmount
+      await addBalanceMutation({
+        accountId,
+        amount: netAmount,
+        description,
+        isPositive: true,
+        isVisible: !isInvisible,
       });
 
-      // Update balance with net amount (after taxes and fees)
-      const newBalance = account.balance + netAmount;
-      console.log('WellGoFar: Updating balance from', account.balance, 'to', newBalance);
-      await db.updateAccountBalance(accountId, newBalance);
-      console.log('WellGoFar: Balance updated successfully');
-
-      // 1. Add main deposit transaction
-      const mainTransaction = {
-        fromAccountId: null, // For deposits, the account is the recipient
-        toAccountId: accountId,
-        amount: Math.abs(netAmount), // Always store positive amount
-        status: 'completed' as 'pending' | 'completed' | 'rejected',
-        createdAt: new Date(),
-        recipientName: account.displayName || account.userid,
-        recipientAccountNumber: account.accountNumber,
-        description: description || 'Balance added by admin',
-        isPositive: true, // Deposits are always positive
-        isVisible: !isInvisible // Set visibility based on admin choice
-      };
-
-      console.log('WellGoFar: Creating main transaction:', mainTransaction);
-      const mainTransactionId = await db.createTransaction(mainTransaction);
-      console.log('WellGoFar: Main transaction created with ID:', mainTransactionId);
-
-      // 2. Add tax transaction if tax is applied
       if (applyTax && taxAmount > 0) {
-        const taxTransaction = {
-          fromAccountId: accountId,
-          toAccountId: null,
+        await deductBalanceMutation({
+          accountId,
           amount: taxAmount,
-          status: 'completed' as 'pending' | 'completed' | 'rejected',
-          createdAt: new Date(new Date().getTime() + 1000), // 1 second later
-          recipientName: 'Internal Revenue Service',
-          recipientBankName: 'Federal Reserve',
           description: `Tax deduction (${taxRate}%)`,
-          recipientAccountNumber: 'IRS-TAX-DEDUCT',
-          isPositive: false, // Tax is always negative
-          isVisible: !isInvisible // Same visibility as main transaction
-        };
-
-        console.log('WellGoFar: Creating tax transaction:', taxTransaction);
-        const taxTransactionId = await db.createTransaction(taxTransaction);
-        console.log('WellGoFar: Tax transaction created with ID:', taxTransactionId);
+          isPositive: false,
+          isVisible: !isInvisible,
+        });
       }
 
-      // 3. Add fee transaction if fee is applied
       if (applyFee && feeAmount > 0) {
-        const feeTransaction = {
-          fromAccountId: accountId,
-          toAccountId: null,
+        await deductBalanceMutation({
+          accountId,
           amount: feeAmount,
-          status: 'completed' as 'pending' | 'completed' | 'rejected',
-          createdAt: new Date(new Date().getTime() + 2000), // 2 seconds later
-          recipientName: 'Trusted',
-          recipientBankName: 'Trusted',
           description: `Processing Fee (${feeRate}%)`,
-          recipientAccountNumber: 'WF-PROC-FEE',
-          isPositive: false, // Fee is always negative
-          isVisible: !isInvisible // Same visibility as main transaction
-        };
-
-        console.log('WellGoFar: Creating fee transaction:', feeTransaction);
-        const feeTransactionId = await db.createTransaction(feeTransaction);
-        console.log('WellGoFar: Fee transaction created with ID:', feeTransactionId);
+          isPositive: false,
+          isVisible: !isInvisible,
+        });
       }
-
-      // Refresh accounts list
-      await loadAccounts();
-      console.log('WellGoFar: Accounts list refreshed');
 
       // Reset form but keep tax and fee settings
       setAddBalance({
@@ -371,53 +254,17 @@ export default function WellGoFar() {
       const description = deductBalance.description;
       const { isInvisible } = deductBalance;
 
-      console.log('WellGoFar: Deducting balance with:', { accountId, amount, description });
-
       if (!accountId || isNaN(amount)) {
         throw new Error('Invalid account ID or amount');
       }
 
-      // Get current account
-      console.log('WellGoFar: Getting account by ID:', accountId);
-      const account = await db.getAccountById(accountId);
-      console.log('WellGoFar: Account data received:', account);
-
-      if (!account) {
-        throw new Error('Account not found');
-      }
-
-      // Make sure the account has enough balance
-      if (account.balance < amount) {
-        throw new Error('Insufficient balance');
-      }
-
-      // Update balance (deduct the amount)
-      const newBalance = account.balance - amount;
-      console.log('WellGoFar: Updating balance from', account.balance, 'to', newBalance);
-      await db.updateAccountBalance(accountId, newBalance);
-      console.log('WellGoFar: Balance updated successfully');
-
-      // Create deduction transaction
-      const deductTransaction = {
-        fromAccountId: accountId, // For deductions, the account is the sender
-        toAccountId: null,
-        amount: amount, // Always store positive amount
-        status: 'completed' as 'pending' | 'completed' | 'rejected',
-        createdAt: new Date(),
-        recipientName: 'Trusted Admin',
-        recipientAccountNumber: 'ADMIN-DEDUCT',
-        description: description || 'Balance deducted by admin',
-        isPositive: false, // Deductions are always negative
-        isVisible: !isInvisible // Set visibility based on admin choice
-      };
-
-      console.log('WellGoFar: Creating deduction transaction:', deductTransaction);
-      const transactionId = await db.createTransaction(deductTransaction);
-      console.log('WellGoFar: Deduction transaction created with ID:', transactionId);
-
-      // Refresh accounts list
-      await loadAccounts();
-      console.log('WellGoFar: Accounts list refreshed');
+      await deductBalanceMutation({
+        accountId,
+        amount,
+        description,
+        isPositive: false,
+        isVisible: !isInvisible,
+      });
 
       // Reset form but keep visibility setting
       setDeductBalance({
@@ -442,8 +289,7 @@ export default function WellGoFar() {
     if (window.confirm('Are you sure you want to delete this account?')) {
       setLoading(true);
       try {
-        await db.deleteAccount(id);
-        await loadAccounts();
+        await deleteAccountMutation({ accountId: id });
         showNotification('success', 'Account deleted successfully');
       } catch (error) {
         console.error('Error deleting account:', error);
@@ -457,18 +303,13 @@ export default function WellGoFar() {
   // Format currency
   const formatCurrency = (amount: number) => {
     // Show full amount without decimal places
-    return '$' + Math.round(amount).toLocaleString('en-US');
+    return '
+ + Math.round(amount).toLocaleString('en-US');
   };
 
   const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      localStorage.removeItem('wellgofar_admin');
-      navigate('/wellgofar');
-    } catch (error) {
-      console.error('Error signing out:', error);
-      showNotification('error', 'Failed to sign out');
-    }
+    localStorage.removeItem('wellgofar_admin');
+    navigate('/wellgofar');
   };
 
   return (
@@ -614,9 +455,9 @@ export default function WellGoFar() {
                   required
                 >
                   <option value="">Select an account</option>
-                  {accounts.map(account => (
-                    <option key={account.id} value={account.id}>
-                      {account.userid} - {account.accountType} (****{account.accountNumber ? account.accountNumber.slice(-4) : '0000'})
+                  {accounts?.map(account => (
+                    <option key={account._id} value={account._id}>
+                      {account.userId} - {account.accountType} (****{account.accountNumber ? account.accountNumber.slice(-4) : '0000'})
                     </option>
                   ))}
                 </select>
@@ -804,9 +645,9 @@ export default function WellGoFar() {
                   required
                 >
                   <option value="">Select an account</option>
-                  {accounts.map(account => (
-                    <option key={account.id} value={account.id}>
-                      {account.userid} - {account.accountType} (****{account.accountNumber ? account.accountNumber.slice(-4) : '0000'})
+                  {accounts?.map(account => (
+                    <option key={account._id} value={account._id}>
+                      {account.userId} - {account.accountType} (****{account.accountNumber ? account.accountNumber.slice(-4) : '0000'})
                     </option>
                   ))}
                 </select>
@@ -880,11 +721,11 @@ export default function WellGoFar() {
           <CardTitle className="text-xl">All Accounts</CardTitle>
         </CardHeader>
         <CardContent>
-          {loading && !accounts.length ? (
+          {loading && !accounts?.length ? (
             <div className="flex justify-center p-4">
               <LoadingSpinner size={24} />
             </div>
-          ) : accounts.length === 0 ? (
+          ) : accounts?.length === 0 ? (
             <p className="text-gray-500 text-center py-4">No accounts found</p>
           ) : (
             <div className="overflow-x-auto">
@@ -900,10 +741,10 @@ export default function WellGoFar() {
                   </tr>
                 </thead>
                 <tbody>
-                  {accounts.map((account) => (
-                    <tr key={account.id} className="border-t border-gray-200">
-                      <td className="px-4 py-3 text-sm">{account.userid}</td>
-                      <td className="px-4 py-3 text-sm">{account.displayName || account.userid}</td>
+                  {accounts?.map((account) => (
+                    <tr key={account._id} className="border-t border-gray-200">
+                      <td className="px-4 py-3 text-sm">{account.userId}</td>
+                      <td className="px-4 py-3 text-sm">{account.displayName || account.userId}</td>
                       <td className="px-4 py-3 text-sm">{account.accountType}</td>
                       <td className="px-4 py-3 text-sm">****{account.accountNumber ? account.accountNumber.slice(-4) : '0000'}</td>
                       <td className="px-4 py-3 text-sm">{formatCurrency(account.balance)}</td>
@@ -911,7 +752,7 @@ export default function WellGoFar() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDeleteAccount(account.id)}
+                          onClick={() => handleDeleteAccount(account._id)}
                           className="text-red-600 hover:text-red-800 hover:bg-red-50"
                         >
                           <Trash2 className="h-4 w-4" />
