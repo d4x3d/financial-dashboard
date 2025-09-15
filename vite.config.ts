@@ -14,8 +14,10 @@ export default defineConfig({
       external: [
         'convex/values',
         'convex/server',
+        'convex/react',
         'convex/_generated/server',
-        'convex/_generated/api'
+        'convex/_generated/api',
+        'convex/_generated/dataModel'
       ]
     }
   }
