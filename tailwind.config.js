@@ -7,9 +7,8 @@ export default {
   theme: {
     extend: {
       colors: {
-        'wf-red': '#AB0600FF', // Cobalt Blue for navbar
-        'wf-red-dark': '#003380', // Darker blue
-        'wf-yellow': '#C7821AFF', // Red accent line
+        'wf-primary': '#1a5336', // Primary green color
+        'wf-secondary': '#038203', // Secondary green color
         'wf-gray': '#F5F5F5',
         'wf-dark': '#333333',
       },

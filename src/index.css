@@ -5,14 +5,15 @@ zz/* Fonts are preloaded in index.html */
   --header-height: 3.5rem;
 
   /*========== Colors ==========*/
-  --first-color: hsl(0, 100%, 30%); /* Trusted red */
-  --first-color-lighten: hsl(0, 100%, 97%);
+  --primary-color: #1a5336; /* Primary green color */
+  --primary-lighten: hsl(150, 55%, 95%);
+  --secondary-color: #038203; /* Secondary green color */
   --title-color: hsl(0, 0%, 20%);
   --dark-color-lighten: hsl(0, 0%, 21%);
   --dark-color: hsl(0, 0%, 8%);
   --text-color: hsl(0, 0%, 35%);
-  --red-color: hsl(214, 100%, 25%); /* Trusted blue */
-  --border-color: hsl(0, 100%, 40%); /* Trusted red */
+  --accent-color: #1a5336; /* Primary green as accent */
+  --border-color: #038203; /* Secondary green for borders */
   --body-color: hsl(0, 0%, 99%);
 
   /*========== Font and typography ==========*/
@@ -129,7 +130,7 @@ button {
 }
 
 .btn-primary {
-  background-color: var(--red-color);
+  background-color: var(--primary-color);
   color: #fff !important;
   display: inline-block;
 }
@@ -157,8 +158,8 @@ button {
   justify-content: space-between;
   align-items: center;
   padding: 15px 50px;
-  background-color: #0047AB; /* Trusted blue - hardcoded */
-  border-bottom: 4px solid #CC0000; /* Trusted red - hardcoded */
+  background-color: #1a5336; /* Primary green */
+  border-bottom: 4px solid #038203; /* Secondary green */
 }
 
 .nav__data .nav__list {

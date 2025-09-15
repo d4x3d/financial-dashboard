@@ -11,7 +11,7 @@ const Navbar = () => {
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
               <img
-                src="/images/wf_logo_220x23.png"
+                src="/tdamcb-mobile-logo.png"
                 alt="Financial Dashboard"
                 width="220"
                 height="23"

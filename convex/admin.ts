@@ -72,7 +72,7 @@ export const addBalance = mutation({
     }
     await ctx.db.patch(accountId, { balance: account.balance + amount });
     await ctx.db.insert('transactions', {
-      fromAccountId: null,
+      fromAccountId: undefined,
       toAccountId: accountId,
       amount,
       status: 'completed',
@@ -103,7 +103,7 @@ export const deductBalance = mutation({
     await ctx.db.patch(accountId, { balance: account.balance - amount });
     await ctx.db.insert('transactions', {
       fromAccountId: accountId,
-      toAccountId: null,
+      toAccountId: undefined,
       amount,
       status: 'completed',
       description: args.description,

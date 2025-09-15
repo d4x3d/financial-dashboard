@@ -303,8 +303,7 @@ export default function WellGoFar() {
   // Format currency
   const formatCurrency = (amount: number) => {
     // Show full amount without decimal places
-    return '
- + Math.round(amount).toLocaleString('en-US');
+    return Math.round(amount).toLocaleString('en-US');
   };
 
   const handleSignOut = async () => {

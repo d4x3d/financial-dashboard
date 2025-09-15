@@ -23,7 +23,7 @@ const NavBar: React.FC<NavBarProps> = ({ isLoggedIn = false, onSignOut }) => {
         <div className="px-4 sm:px-6 lg:px-8 py-6 flex justify-between items-center">
           <Link to="/" className="flex items-center">
             <img
-              src="/images/wf_logo_220x23.png"
+              src="/tdamcb-mobile-logo.png"
               alt="Financial Dashboard"
               width="220"
               height="23"

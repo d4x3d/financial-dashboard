@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, AlertCircle, Loader, DollarSign } from 'lucide-react';
-import { db } from '../../services/supabaseDb';
+import { useMutation, useQuery } from 'convex/react';
+import { api } from '../../../convex/_generated/api';
 
 interface TransferFormProps {
   transferType: string;
@@ -27,21 +28,18 @@ const TransferForm: React.FC<TransferFormProps> = ({ transferType, onBack }) => 
   // State for account data
   const [account, setAccount] = useState<any>({ id: '', name: 'Primary Account', accountNumber: '•••• 4567', balance: 0 });
 
-  // Get the first account from the database
+  // Get current user from auth context (would need to import useAuth)
+  // For now, using a placeholder - in a real app, you'd get the current user ID from auth context
+  const currentUser = { userId: 'user-placeholder' }; // This should come from useAuth()
+  
+  // Get account data using Convex query
+  const accountData = useQuery(api.accounts.getAccount, { userId: currentUser.userId });
+  
   useEffect(() => {
-    const fetchAccount = async () => {
-      try {
-        const accounts = await db.getAccounts();
-        if (accounts && accounts.length > 0) {
-          setAccount(accounts[0]);
-        }
-      } catch (error) {
-        console.error('Error fetching accounts:', error);
-      }
-    };
-
-    fetchAccount();
-  }, []);
+    if (accountData) {
+      setAccount(accountData);
+    }
+  }, [accountData]);
 
   // No predefined recipients
 
@@ -101,6 +99,8 @@ const TransferForm: React.FC<TransferFormProps> = ({ transferType, onBack }) => 
     onBack();
   };
 
+  const createTransactionMutation = useMutation(api.transactions.createTransaction);
+
   const handleSubmitTransfer = async () => {
     setIsLoading(true);
     setError(null);
@@ -108,18 +108,19 @@ const TransferForm: React.FC<TransferFormProps> = ({ transferType, onBack }) => 
     try {
       // Create a transaction in the database
       const confirmationNumber = generateConfirmationNumber();
+      
+      if (!account._id) {
+        throw new Error('Account not found');
+      }
 
-      const transactionId = await db.createTransaction({
-        fromAccountId: account.id || '',
+      await createTransactionMutation({
+        fromAccountId: account._id,
         recipientName: formData.recipientName,
-        recipientEmail: formData.email,
         recipientAccountNumber: formData.accountNumber,
         recipientRoutingNumber: formData.routingNumber,
         recipientBankName: formData.institutionName,
         amount: parseFloat(formData.amount),
-        memo: formData.memo,
-        status: 'pending',
-        createdAt: new Date()
+        description: formData.memo || `Transfer to ${formData.recipientName}`
       });
 
       // Navigate to confirmation page
