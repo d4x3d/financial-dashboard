@@ -1,21 +1,32 @@
-
-import { mutation, query } from './_generated/server';
-import { v } from 'convex/values';
+import { mutation, query } from "./_generated/server";
+import { v } from "convex/values";
 
 export const getTransactionsByAccountId = query({
-  args: { accountId: v.id('accounts') },
+  args: { accountId: v.id("accounts") },
   handler: async (ctx, { accountId }) => {
-    return await ctx.db
-      .query('transactions')
-      .filter((q) => q.eq(q.field('fromAccountId'), accountId))
+    const txs = await ctx.db
+      .query("transactions")
+      .filter((q) =>
+        q.or(
+          q.eq(q.field("fromAccountId"), accountId),
+          q.eq(q.field("toAccountId"), accountId)
+        )
+      )
       .collect();
+
+    // Keep only visible (if flag used) and sort newest first
+    const sorted = txs
+      .filter((t) => t.isVisible !== false)
+      .sort((a, b) => (b._creationTime || 0) - (a._creationTime || 0));
+
+    return sorted;
   },
 });
 
 export const createTransaction = mutation({
   args: {
-    fromAccountId: v.id('accounts'),
-    toAccountId: v.optional(v.id('accounts')),
+    fromAccountId: v.id("accounts"),
+    toAccountId: v.optional(v.id("accounts")),
     amount: v.number(),
     description: v.optional(v.string()),
     recipientName: v.optional(v.string()),
@@ -29,25 +40,29 @@ export const createTransaction = mutation({
     const fromAccount = await ctx.db.get(fromAccountId);
 
     if (!fromAccount) {
-      throw new Error('From account not found');
+      throw new Error("From account not found");
     }
 
     if (fromAccount.balance < amount) {
-      throw new Error('Insufficient funds');
+      throw new Error("Insufficient funds");
     }
 
-    await ctx.db.patch(fromAccountId, { balance: fromAccount.balance - amount });
+    await ctx.db.patch(fromAccountId, {
+      balance: fromAccount.balance - amount,
+    });
 
     if (args.toAccountId) {
       const toAccount = await ctx.db.get(args.toAccountId);
       if (toAccount) {
-        await ctx.db.patch(args.toAccountId, { balance: toAccount.balance + amount });
+        await ctx.db.patch(args.toAccountId, {
+          balance: toAccount.balance + amount,
+        });
       }
     }
 
-    await ctx.db.insert('transactions', {
+    await ctx.db.insert("transactions", {
       ...args,
-      status: 'completed',
+      status: "completed",
     });
   },
 });

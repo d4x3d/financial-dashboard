@@ -1,5 +1,4 @@
-
-zz/* Fonts are preloaded in index.html */
+/* Fonts are preloaded in index.html */
 
 :root {
   --header-height: 3.5rem;
@@ -18,9 +17,9 @@ zz/* Fonts are preloaded in index.html */
 
   /*========== Font and typography ==========*/
   --body-font: "Open Sans", sans-serif;
-  --normal-font-size: .938rem;
-  --small-font-size: .813rem;
-  --smaller-font-size: .75rem;
+  --normal-font-size: 0.938rem;
+  --small-font-size: 0.813rem;
+  --smaller-font-size: 0.75rem;
 
   /*========== Font weight ==========*/
   --font-normal: 400;
@@ -35,8 +34,8 @@ zz/* Fonts are preloaded in index.html */
 @media screen and (min-width: 1024px) {
   :root {
     --normal-font-size: 1rem;
-    --small-font-size: .875rem;
-    --smaller-font-size: .813rem;
+    --small-font-size: 0.875rem;
+    --smaller-font-size: 0.813rem;
   }
 }
 
@@ -49,7 +48,12 @@ zz/* Fonts are preloaded in index.html */
     font-family: var(--body-font);
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: "Montserrat", sans-serif;
   }
 
@@ -117,7 +121,8 @@ button {
   display: grid;
 }
 
-.btn-primary, .btn-secondary {
+.btn-primary,
+.btn-secondary {
   border-radius: 25px;
   display: table-caption;
   font-family: var(--body-font);
@@ -146,7 +151,7 @@ button {
 .header {
   position: relative;
   width: 100%;
-  box-shadow: 0 2px 8px hsla(220, 68%, 12%, .1);
+  box-shadow: 0 2px 8px hsla(220, 68%, 12%, 0.1);
   background-color: var(--body-color);
   z-index: var(--z-fixed);
 }
@@ -176,12 +181,12 @@ button {
 .nav__logo {
   display: inline-flex;
   align-items: center;
-  column-gap: .25rem;
+  column-gap: 0.25rem;
   color: var(--first-color-lighten);
   font-size: 3rem;
   font-weight: var(--font-semi-bold);
-  font-family: 'Roboto Slab', serif;
-  transition: color .3s;
+  font-family: "Roboto Slab", serif;
+  transition: color 0.3s;
 }
 
 .sign-on {
@@ -205,7 +210,7 @@ button {
   background: white;
   padding: 2rem;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   max-width: 400px;
   margin: 2rem auto;
 }
@@ -281,7 +286,12 @@ button {
 /* Home Section Styles */
 .home {
   position: relative;
-  background: linear-gradient(to right, rgba(241.5, 242.5, 244.5, 1), rgba(241.5, 242.5, 244.5, 1), rgba(241.5, 242.5, 244.5, 0.1));
+  background: linear-gradient(
+    to right,
+    rgba(241.5, 242.5, 244.5, 1),
+    rgba(241.5, 242.5, 244.5, 1),
+    rgba(241.5, 242.5, 244.5, 0.1)
+  );
   padding: 4rem 0;
 }
 
@@ -312,7 +322,7 @@ button {
 
 /* Login Background */
 .login-background {
-  background-image: url('/bg.jpg');
+  background-image: url("/bg.jpg");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

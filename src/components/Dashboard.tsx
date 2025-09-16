@@ -1,15 +1,22 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '../components/ui/button';
-import { Card, CardContent } from '../components/ui/card';
-import { Alert, AlertDescription } from '../components/ui/alert';
-import { Building, AlertTriangle, X, ArrowRight, CreditCard, History } from 'lucide-react';
-import DashboardLayout from './DashboardLayout';
-import { LoadingSpinner } from './ui/loading-spinner';
-import { motion } from 'framer-motion';
-import { useAuth } from '../contexts/AuthContext';
-import { useQuery } from 'convex/react';
-import { api } from '../../convex/_generated/api';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Button } from "../components/ui/button";
+import { Card, CardContent } from "../components/ui/card";
+import { Alert, AlertDescription } from "../components/ui/alert";
+import {
+  Building,
+  AlertTriangle,
+  X,
+  ArrowRight,
+  CreditCard,
+  History,
+} from "lucide-react";
+import DashboardLayout from "./DashboardLayout";
+import { LoadingSpinner } from "./ui/loading-spinner";
+import { motion } from "framer-motion";
+import { useAuth } from "../contexts/AuthContext";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 // Function to get time-based greeting
 const getTimeBasedGreeting = () => {
@@ -26,7 +33,10 @@ const getTimeBasedGreeting = () => {
 function Dashboard() {
   const [showAlert, setShowAlert] = useState(true);
   const { currentUser, account } = useAuth();
-  const transactions = useQuery(api.transactions.getTransactionsByAccountId, account ? { accountId: account._id } : 'skip');
+  const transactions = useQuery(
+    api.transactions.getTransactionsByAccountId,
+    account ? { accountId: account._id } : "skip"
+  );
 
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -46,7 +56,9 @@ function Dashboard() {
         <div className="h-full flex items-center justify-center p-8">
           <div className="text-center">
             <LoadingSpinner size={40} className="mx-auto text-slate-700 mb-4" />
-            <p className="text-slate-600">Loading your account information...</p>
+            <p className="text-slate-600">
+              Loading your account information...
+            </p>
           </div>
         </div>
       </DashboardLayout>
@@ -57,13 +69,18 @@ function Dashboard() {
     <DashboardLayout>
       <div className="space-y-6 p-4 max-w-4xl mx-auto">
         {showAlert && (
-          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
             <Alert className="bg-amber-50 border-amber-200 text-amber-800 shadow-sm p-3">
               <div className="flex flex-col sm:flex-row items-start sm:items-center w-full">
                 <div className="flex items-center mb-2 sm:mb-0">
                   <AlertTriangle className="h-4 w-4 text-amber-800 mr-2 flex-shrink-0" />
                   <AlertDescription className="text-sm">
-                    New Login detected! Your last logon was on 2025-04-15 15:01:40.
+                    New Login detected! Your last logon was on 2025-04-15
+                    15:01:40.
                   </AlertDescription>
                 </div>
                 <Button
@@ -79,13 +96,25 @@ function Dashboard() {
           </motion.div>
         )}
 
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
-          <h1 className="text-2xl font-bold">{getTimeBasedGreeting()}, {currentUser?.fullName || 'User'}</h1>
-          <p className="text-gray-500 mt-1">Here's a summary of your accounts</p>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <h1 className="text-2xl font-bold">
+            {getTimeBasedGreeting()}, {currentUser?.fullName || "User"}
+          </h1>
+          <p className="text-gray-500 mt-1">
+            Here's a summary of your accounts
+          </p>
         </motion.div>
 
         <div className="grid gap-6 md:grid-cols-2">
-          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.4 }}>
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4 }}
+          >
             <Card className="overflow-hidden border min-w-full h-full">
               <CardContent className="p-6 flex flex-col h-full">
                 <div className="flex items-center gap-2 mb-3">
@@ -94,9 +123,15 @@ function Dashboard() {
                 </div>
                 <div className="flex-grow flex flex-col justify-center">
                   <div className="text-3xl font-bold mb-2 text-left">
-                    ${account ? Math.round(account.balance).toLocaleString('en-US') : '0'}
+                    $
+                    {account
+                      ? Math.round(account.balance).toLocaleString("en-US")
+                      : "0"}
                   </div>
-                  <div className="text-sm text-gray-500 text-left">Account ending in ***{account?.accountNumber?.slice(-4) || '4487'}</div>
+                  <div className="text-sm text-gray-500 text-left">
+                    Account ending in ***
+                    {account?.accountNumber?.slice(-4) || "4487"}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -115,9 +150,15 @@ function Dashboard() {
                 </div>
                 <div className="flex-grow flex flex-col justify-center">
                   <div className="text-3xl font-bold mb-2 text-left">
-                    ${account ? Math.round(account.balance).toLocaleString('en-US') : '0'}
+                    $
+                    {account
+                      ? Math.round(account.balance).toLocaleString("en-US")
+                      : "0"}
                   </div>
-                  <div className="text-sm text-gray-500 text-left">Account ending in ***{account?.accountNumber?.slice(-4) || '4487'}</div>
+                  <div className="text-sm text-gray-500 text-left">
+                    Account ending in ***
+                    {account?.accountNumber?.slice(-4) || "4487"}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -133,45 +174,34 @@ function Dashboard() {
           <div className="space-y-4 mb-8">
             {transactions && transactions.length > 0 ? (
               transactions.slice(0, 5).map((transaction, index) => {
-                // Simply use the isPositive flag if available
-                let isDeposit = transaction.isPositive !== undefined ? transaction.isPositive : true;
-
-                // For display purposes - force positive for admin deposits
-
                 return (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors duration-150 shadow-sm">
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors duration-150 shadow-sm"
+                  >
                     <div className="flex items-center space-x-3">
-                      <div className={`${
-                        transaction.description?.includes('Tax') ? 'bg-red-100' :
-                        transaction.description?.includes('Fee') ? 'bg-orange-100' :
-                        isDeposit ? 'bg-green-100' : 'bg-blue-100'
-                      } p-2 rounded-full flex items-center justify-center w-8 h-8 flex-shrink-0`}>
-                        {transaction.description?.includes('Tax') ? (
-                          <AlertTriangle className="h-4 w-4 text-red-600" />
-                        ) : transaction.description?.includes('Fee') ? (
-                          <Building className="h-4 w-4 text-orange-600" />
-                        ) : isDeposit ? (
-                          <CreditCard className="h-4 w-4 text-green-600" />
-                        ) : (
-                          <CreditCard className="h-4 w-4 text-blue-600" />
-                        )}
+                      <div className="bg-green-100 p-2 rounded-full flex items-center justify-center w-8 h-8 flex-shrink-0">
+                        <CreditCard className="h-4 w-4 text-green-600" />
                       </div>
                       <div className="flex-1 min-w-0 overflow-hidden">
-                        <div className="font-medium text-sm truncate">{transaction.description || 'Transaction'}</div>
+                        <div className="font-medium text-sm truncate">
+                          {transaction.description || "Transaction"}
+                        </div>
                         <div className="text-xs text-gray-500 truncate">
-                          {new Date(transaction._creationTime).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
+                          {new Date(
+                            transaction._creationTime
+                          ).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
                           })}
                         </div>
                       </div>
                     </div>
 
-                    <div className={`${isDeposit ? 'text-green-600' : 'text-red-600'} font-medium text-right ml-2 flex-shrink-0`}>
+                    <div className="text-green-600 font-medium text-right ml-2 flex-shrink-0">
                       <div className="text-sm">
-                        {isDeposit ? '+' : '-'}
-                        ${Math.abs(transaction.amount).toLocaleString('en-US')}
+                        +${Math.abs(transaction.amount).toLocaleString("en-US")}
                       </div>
                     </div>
                   </div>
@@ -182,7 +212,9 @@ function Dashboard() {
                 <div className="flex flex-col items-center justify-center">
                   <History className="h-10 w-10 text-gray-400 mb-2" />
                   <p className="font-medium">No recent transactions</p>
-                  <p className="text-sm">Your transaction history will appear here</p>
+                  <p className="text-sm">
+                    Your transaction history will appear here
+                  </p>
                 </div>
               </div>
             )}

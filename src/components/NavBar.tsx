@@ -1,7 +1,17 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Search, MapPin, HelpCircle, ArrowRightLeft, LogOut, LogIn, History } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  Menu,
+  X,
+  Search,
+  MapPin,
+  HelpCircle,
+  ArrowRightLeft,
+  LogOut,
+  LogIn,
+  History,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface NavBarProps {
   isLoggedIn?: boolean;
@@ -13,7 +23,7 @@ const NavBar: React.FC<NavBarProps> = ({ isLoggedIn = false, onSignOut }) => {
   const navigate = useNavigate();
 
   const handleSignOn = () => {
-    navigate('/dashboard');
+    navigate("/dashboard");
   };
 
   return (
@@ -33,23 +43,37 @@ const NavBar: React.FC<NavBarProps> = ({ isLoggedIn = false, onSignOut }) => {
 
           {/* Desktop Nav Links */}
           <div className="hidden md:flex items-center space-x-6">
-            <a href="#" className="text-white hover:text-gray-200 text-base flex items-center">
+            <a
+              href="#"
+              className="text-white hover:text-gray-200 text-base flex items-center"
+            >
               <MapPin className="h-5 w-5 mr-2" /> ATMs/Locations
             </a>
-            <a href="#" className="text-white hover:text-gray-200 text-base flex items-center">
+            <a
+              href="#"
+              className="text-white hover:text-gray-200 text-base flex items-center"
+            >
               <HelpCircle className="h-5 w-5 mr-2" /> Help
             </a>
             {isLoggedIn && (
               <>
-                <Link to="/transfer" className="text-white hover:text-gray-200 text-base flex items-center">
+                <Link
+                  to="/transfer"
+                  className="text-white hover:text-gray-200 text-base flex items-center"
+                >
                   <ArrowRightLeft className="h-5 w-5 mr-2" /> Transfer
                 </Link>
-                <Link to="/transactions" className="text-white hover:text-gray-200 text-base flex items-center">
+                <Link
+                  to="/transactions"
+                  className="text-white hover:text-gray-200 text-base flex items-center"
+                >
                   <History className="h-5 w-5 mr-2" /> Transactions
                 </Link>
               </>
             )}
-            {!isLoggedIn && <Search className="text-white h-5 w-5 cursor-pointer" />}
+            {!isLoggedIn && (
+              <Search className="text-white h-5 w-5 cursor-pointer" />
+            )}
             <button
               onClick={isLoggedIn ? onSignOut : handleSignOn}
               className="bg-white text-gray-900 px-5 py-3 rounded-full hover:bg-gray-100 transition-colors text-base font-medium flex items-center"
@@ -104,11 +128,11 @@ const NavBar: React.FC<NavBarProps> = ({ isLoggedIn = false, onSignOut }) => {
         <AnimatePresence>
           {isMenuOpen && (
             <motion.div
-              className="md:hidden bg-wf-red px-4 border-t border-red-600 overflow-hidden"
+              className="md:hidden bg-wf-red px-4 border-t border-wf-red-dark overflow-hidden"
               initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
+              animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
+              transition={{ duration: 0.3, ease: "easeInOut" }}
             >
               <motion.div
                 className="space-y-3 py-3"
@@ -141,7 +165,10 @@ const NavBar: React.FC<NavBarProps> = ({ isLoggedIn = false, onSignOut }) => {
                       animate={{ x: 0, opacity: 1 }}
                       transition={{ duration: 0.3, delay: 0.25 }}
                     >
-                      <Link to="/transfer" className="block text-white py-3 text-base flex items-center">
+                      <Link
+                        to="/transfer"
+                        className="block text-white py-3 text-base flex items-center"
+                      >
                         <ArrowRightLeft className="h-5 w-5 mr-2" /> Transfer
                       </Link>
                     </motion.div>
@@ -150,7 +177,10 @@ const NavBar: React.FC<NavBarProps> = ({ isLoggedIn = false, onSignOut }) => {
                       animate={{ x: 0, opacity: 1 }}
                       transition={{ duration: 0.3, delay: 0.3 }}
                     >
-                      <Link to="/transactions" className="block text-white py-3 text-base flex items-center">
+                      <Link
+                        to="/transactions"
+                        className="block text-white py-3 text-base flex items-center"
+                      >
                         <History className="h-5 w-5 mr-2" /> Transactions
                       </Link>
                     </motion.div>
@@ -187,11 +217,36 @@ const NavBar: React.FC<NavBarProps> = ({ isLoggedIn = false, onSignOut }) => {
           <div className="bg-white shadow">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex space-x-8 overflow-x-auto">
-                <a href="#" className="py-5 text-wf-red border-b-2 border-wf-red whitespace-nowrap font-medium text-base">Personal</a>
-                <a href="#" className="py-5 text-gray-600 hover:text-gray-900 whitespace-nowrap text-base">Investing & Wealth Management</a>
-                <a href="#" className="py-5 text-gray-600 hover:text-gray-900 whitespace-nowrap text-base">Small Business</a>
-                <a href="#" className="py-5 text-gray-600 hover:text-gray-900 whitespace-nowrap text-base">Commercial Banking</a>
-                <a href="#" className="py-5 text-gray-600 hover:text-gray-900 whitespace-nowrap text-base">Corporate & Investment Banking</a>
+                <a
+                  href="#"
+                  className="py-5 text-wf-red border-b-2 border-wf-red whitespace-nowrap font-medium text-base"
+                >
+                  Personal
+                </a>
+                <a
+                  href="#"
+                  className="py-5 text-gray-600 hover:text-gray-900 whitespace-nowrap text-base"
+                >
+                  Investing & Wealth Management
+                </a>
+                <a
+                  href="#"
+                  className="py-5 text-gray-600 hover:text-gray-900 whitespace-nowrap text-base"
+                >
+                  Small Business
+                </a>
+                <a
+                  href="#"
+                  className="py-5 text-gray-600 hover:text-gray-900 whitespace-nowrap text-base"
+                >
+                  Commercial Banking
+                </a>
+                <a
+                  href="#"
+                  className="py-5 text-gray-600 hover:text-gray-900 whitespace-nowrap text-base"
+                >
+                  Corporate & Investment Banking
+                </a>
               </div>
             </div>
           </div>
