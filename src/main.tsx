@@ -1,13 +1,16 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
-import './index.css';
-import { ConvexProvider, ConvexReactClient } from 'convex/react';
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import App from "./App.tsx";
+import "./index.css";
+import { ConvexProvider, ConvexReactClient } from "convex/react";
 
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
+// Hard-coded Convex URL to avoid reliance on Vite env vars
+const convex = new ConvexReactClient(
+  "https://acrobatic-butterfly-784.convex.cloud"
+);
 
 // Simple and direct rendering
-const rootElement = document.getElementById('root');
+const rootElement = document.getElementById("root");
 if (rootElement) {
   createRoot(rootElement).render(
     <StrictMode>

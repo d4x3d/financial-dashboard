@@ -1,6 +1,8 @@
+import { ConvexReactClient } from "convex/react";
 
-import { ConvexReactClient } from 'convex/react';
-
-const convex = new ConvexReactClient(import.meta.env.VITE_CONVEX_URL as string);
+// Hard-coded Convex URL to avoid reliance on Vite env vars
+const convex = new ConvexReactClient(
+  "https://acrobatic-butterfly-784.convex.cloud"
+);
 
 export default convex;
